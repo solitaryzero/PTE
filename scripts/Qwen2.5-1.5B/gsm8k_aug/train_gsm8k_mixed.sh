@@ -1,0 +1,16 @@
+CUDA_VISIBLE_DEVICES=6 python ./src/math/train_gsm8k_aug.py \
+    --base_model ./models/Qwen2.5-1.5B \
+    --data_path ./data/gsm8k \
+    --aug_data_path ./data/gsm8k_aug \
+    --save_model_path ./models/Qwen2.5-1.5B_tuned/gsm8k_aug_mixed \
+    --save_result_path ./output/Qwen2.5-1.5B_tuned/gsm8k_aug_mixed \
+    --bf16 \
+    --do_eval \
+    --learning_rate 1e-5 \
+    --train_batch_size 4 \
+    --epoch 1 \
+    --logging_steps 200 \
+    --replace_numbers 'mixed' \
+    --max_new_tokens 2048 \
+    --report_to none \
+    --seed 42

@@ -1,0 +1,18 @@
+CUDA_VISIBLE_DEVICES=6 python ./src/stepwise/train_probe.py \
+    --base_model ./models/Qwen2.5-1.5B \
+    --data_path ./data/gsm8k_aug \
+    --save_model_path ./models/Qwen2.5-1.5B_probe \
+    --save_result_path ./output/Qwen2.5-1.5B_probe \
+    --int_precision 10 \
+    --frac_precision 5 \
+    --intermediate_dim 512 \
+    --learning_rate 1e-5 \
+    --grad_clip 1 \
+    --train_batch_size 4 \
+    --epoch 1 \
+    --do_train \
+    --do_eval \
+    --logging_steps 100 \
+    --max_new_tokens 2048 \
+    --latent_type number \
+    --seed 42
