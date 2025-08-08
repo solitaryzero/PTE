@@ -60,6 +60,34 @@ class ProbeCollator:
             "attention_mask": torch.tensor(attention_masks),
         }
         return batch
+    
+
+class VerifiedProbeCollator:
+    def __init__(self, pad_token_id, latent_encoder, tokenizer=None):
+        self.tokenizer = tokenizer
+        self.pad_token_id = pad_token_id
+        self.latent_encoder = latent_encoder
+
+    def __call__(self, elements):
+        tokenlist = [e["input_ids"] for e in elements]
+        answers = [e['answer'] for e in elements]
+        tokens_maxlen = max([len(t) for t in tokenlist])
+
+        input_ids, _answers, labels, attention_masks = [], [], [], []
+        for tokens, ans in zip(tokenlist, answers):
+            pad_len = tokens_maxlen - len(tokens)
+            input_ids.append(tokens + [self.pad_token_id]*pad_len)
+            attention_masks.append([1]*len(tokens) + [0]*pad_len)
+            _answers.append(ans)
+            labels.append(self.latent_encoder.encode_single(ans))
+
+        batch = {
+            "input_ids": torch.tensor(input_ids),
+            "answer": torch.tensor(_answers),
+            "labels": torch.tensor(labels),
+            "attention_mask": torch.tensor(attention_masks),
+        }
+        return batch
 
 
 def build_dataloader(
@@ -84,13 +112,21 @@ def build_probe_dataloader(
     latent_encoder,
     pad_token_id,
     tokenizer=None,
+    verified=False,
     **kwargs,
 ):
-    collator = ProbeCollator(
-        latent_encoder=latent_encoder,
-        pad_token_id=pad_token_id,
-        tokenizer=tokenizer,
-    )
+    if (verified):
+        collator = VerifiedProbeCollator(
+            latent_encoder=latent_encoder,
+            pad_token_id=pad_token_id,
+            tokenizer=tokenizer,
+        )
+    else:
+        collator = ProbeCollator(
+            latent_encoder=latent_encoder,
+            pad_token_id=pad_token_id,
+            tokenizer=tokenizer,
+        )
 
     dataloader = DataLoader(
         dataset,

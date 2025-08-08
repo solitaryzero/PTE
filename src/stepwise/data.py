@@ -78,6 +78,34 @@ def process_gsm8k_aug(
     })
 
     return processed_dataset
+
+
+def convert_to_probe_dataset(
+    examples,
+):
+    prompts, answers = [], []
+    iterator = tqdm(examples.iter(batch_size=1), desc='Convert')
+    for entry in iterator:
+        steps, step_results = entry['steps'][0], entry['step_results'][0]
+        assert (len(steps) == len(step_results))
+        for i, step in enumerate(steps):
+            res = step_results[i]
+
+            query = entry['query'][0]
+            prev_steps = ' '.join([('<<' + s + '>>') for s in steps[:i-1]])
+            current_step = '<<' + '='.join(step.split('=')[:-1]) + '='
+            if (len(prev_steps) > 0):
+                current_step = ' ' + current_step
+            prompt = query + prev_steps + current_step
+            prompts.append(prompt)
+            answers.append(res)
+
+    processed_dataset = Dataset.from_dict({
+        'prompt': prompts,
+        'answer': answers,
+    })
+
+    return processed_dataset
         
 
 if __name__ == '__main__':

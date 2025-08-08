@@ -170,10 +170,14 @@ class MultiHotLatentEncoder(LatentEncoderBase):
         return torch.tensor(encoded, dtype=torch.float32)
     
     @torch.no_grad()
-    def compute_metrics(self, predictions, labels, probe_mask):
+    def compute_metrics(self, predictions, labels, probe_mask=None):
         comparison = ((torch.sigmoid(predictions) >= 0.5) == labels)
         comparison = torch.all(comparison, dim=-1)
-        comparison = comparison[probe_mask].flatten()
+        if (probe_mask is not None):
+            comparison = comparison[probe_mask].flatten()
+        else:
+            comparison = comparison.flatten()
+
         return {
             'total': comparison.shape[0],
             'correct': comparison.sum().item(),
@@ -291,17 +295,20 @@ class ValueLatentEncoder(LatentEncoderBase):
         return torch.tensor(encoded, dtype=torch.float32)
     
     @torch.no_grad()
-    def compute_metrics(self, predictions, labels, probe_mask):
+    def compute_metrics(self, predictions, labels, probe_mask=None):
         sign_correctness = ((torch.sigmoid(predictions[..., 0]) >= 0.5) == labels[..., 0])
         predicted_value, golden_value = torch.exp2(predictions[..., 1]), torch.exp2(labels[..., 1])
         delta = torch.abs(predicted_value - golden_value)
         threshold = golden_value * 0.01
         comparison = (delta < threshold) & sign_correctness
-        comparison = comparison[probe_mask].flatten()
+        if (probe_mask is not None):
+            comparison = comparison[probe_mask].flatten()
+        else:
+            comparison = comparison.flatten()
 
-        print(predicted_value[probe_mask])
-        print(golden_value[probe_mask])
-        input()
+        # print(predicted_value[probe_mask])
+        # print(golden_value[probe_mask])
+        # input()
 
         return {
             'total': comparison.shape[0],
@@ -464,7 +471,7 @@ class FoNELatentEncoder(LatentEncoderBase):
         return torch.tensor(encoded, dtype=torch.float32)
     
     @torch.no_grad()
-    def compute_metrics(self, predictions, labels, probe_mask):
+    def compute_metrics(self, predictions, labels, probe_mask=None):
         sign_correctness = ((torch.sigmoid(predictions[..., 0]) >= 0.5) == labels[..., 0])
 
         k = (predictions.shape[-1]-1) // 2
@@ -483,7 +490,11 @@ class FoNELatentEncoder(LatentEncoderBase):
         value_correctness = torch.all(value_correctness, dim=-1)
 
         comparison = sign_correctness & value_correctness
-        comparison = comparison[probe_mask].flatten()
+        if (probe_mask is not None):
+            comparison = comparison[probe_mask].flatten()
+        else:
+            comparison = comparison.flatten()
+
         return {
             'total': comparison.shape[0],
             'correct': comparison.sum().item(),
